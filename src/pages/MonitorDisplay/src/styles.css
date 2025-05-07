@@ -1,0 +1,167 @@
+@font-face {
+  font-family: "ClanOT Medium";
+  src: url("./assets/fonts/ClanOT-NarrowMedium.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "ClanOT Book";
+  src: url("./assets/fonts/ClanOT-NarrowBook.otf") format("opentype");
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "ClanOT Bold";
+  src: url("./assets/fonts/ClanOT-NarrowBold.otf") format("opentype");
+  font-weight: bold;
+  font-style: normal;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  font-family: "ClanOT Medium", sans-serif;
+  font-size: 14px;
+}
+
+.page-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.main-content-monitor {
+  background-color: white;
+  display: flex;
+  padding: 15px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  height: auto;
+  max-width: 100rem;
+}
+.main-window-container {
+  max-height: 25rem;
+  overflow-y: auto;
+}
+.queue-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  flex-wrap: wrap;
+}
+
+.left-section {
+  align-self: center;
+}
+.left-section,
+.right-section {
+  width: 50%;
+  padding: 15px;
+}
+
+@media (min-width: 768px) {
+  .right-section {
+    border-left: 3px solid #35408e;
+  }
+}
+
+.right-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .serving-box {
+    margin-right: 20px;
+  }
+}
+
+.serving-box {
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.serving-header {
+  background-color: #35408e;
+  color: white;
+  text-align: center;
+  font-size: 24px;
+  padding: 10px;
+}
+
+.serving-content {
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.proceed-text {
+  color: #ff0202;
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.window-box {
+  border: 1px solid #35408e;
+  border-radius: 8px;
+  padding: 6px 12px;
+  margin-bottom: 10px;
+  font-size: 22px;
+  min-width: 150px;
+  text-align: center;
+}
+
+.queue-number {
+  font-size: 70px;
+  color: #35408e;
+  margin-top: 20px;
+  height: 90px;
+}
+
+.window-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.horizontal-divider {
+  height: 3px;
+  background-color: #35408e;
+  width: 100%;
+  margin: 10px 0 15px 0;
+}
+
+.footer {
+  background-color: #35408e;
+  height: 50px;
+}
+
+@media (max-width: 768px) {
+  .left-section,
+  .right-section {
+    width: 100%;
+    padding: 10px;
+  }
+
+  .serving-box {
+    margin-top: 30px;
+  }
+
+  .queue-number {
+    font-size: 50px;
+    height: 70px;
+  }
+
+  .header-title {
+    font-size: 20px;
+  }
+}
