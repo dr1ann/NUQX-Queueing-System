@@ -14,7 +14,11 @@ function Managequeue({ windowNumber }) {
     (q) => q.isPriority && q.status === "Waiting"
   );
   useEffect(() => {
-    fetchQueueNumbers();
+    const interval = setInterval(() => {
+      fetchQueueNumbers();
+    }, 5000); // every 5 seconds
+
+    return () => clearInterval(interval);
   }, []);
 
   const fetchQueueNumbers = async () => {
