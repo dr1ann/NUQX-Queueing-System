@@ -24,13 +24,11 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        let user = {};
-        user.email = email;
-        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("token", data.token);
 
         switch (data.role) {
           case "staff":
-            navigate("/staff/manage-queue");
+            navigate("/staff/managequeue");
             break;
           case "kiosk":
             navigate("/kiosk");

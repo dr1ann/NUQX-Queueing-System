@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import user from "../../../images/user.png";
+import user from "../../images/user.png";
 import { FaTimes } from "react-icons/fa";
 
-const AddUser = ({ onClose, onSuccess }) => {
+const AddKioskUser = () => {
   const [selectedImage, setSelectedImage] = useState(user);
 
   const [firstName, setFirstName] = useState("");
@@ -59,7 +59,7 @@ const AddUser = ({ onClose, onSuccess }) => {
           lastName,
           email,
           password,
-          role: "staff", // hardcoded
+          role: "kiosk", // hardcoded
           profileImage: selectedImage,
         }),
       });
@@ -77,8 +77,6 @@ const AddUser = ({ onClose, onSuccess }) => {
       if (response.ok) {
         alert("User registered successfully!");
         handleClear();
-        onClose();
-        onSuccess();
       } else {
         alert(data.message || "Registration failed.");
       }
@@ -219,13 +217,9 @@ const AddUser = ({ onClose, onSuccess }) => {
       ></div>
       <div style={modalStyle}>
         <h3 className="text-2xl pl-2 font-semibold flex self-start mb-4">
-          Add New Staff
+          Add Kiosk User
         </h3>
-        <span
-          className="text-[#35408E]"
-          style={closeButtonStyle}
-          onClick={onClose}
-        >
+        <span className="text-[#35408E]" style={closeButtonStyle}>
           <FaTimes />
         </span>
         <form onSubmit={handleSubmit}>
@@ -341,4 +335,4 @@ const AddUser = ({ onClose, onSuccess }) => {
   );
 };
 
-export default AddUser;
+export default AddKioskUser;

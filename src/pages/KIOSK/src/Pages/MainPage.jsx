@@ -1,14 +1,27 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import "../Style.css";
 import Logo from "../../../../images/NULogo.png";
 import BackgroundImage from "../../../../images/NU-Manila.svg";
+import LogoutModal from "./LogoutModal";
+import { useState } from "react";
+import { RiLogoutCircleLine } from "react-icons/ri";
 
 function MainPage() {
   const navigate = useNavigate();
 
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
   const handleStart = (userType) => {
     navigate("/startpage", { state: { userType } });
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    navigate("/login");
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   const styles = {
@@ -37,6 +50,7 @@ function MainPage() {
       height: "80px",
       display: "flex",
       alignItems: "center",
+      justifyContent: "space-between",
       padding: "0 20px",
     },
     logoContainer: {
@@ -73,11 +87,33 @@ function MainPage() {
         <div style={styles.background}></div>
         <header style={styles.header}>
           <div style={styles.logoContainer}>
-            <div className="ml-[5px] md:ml-0" style={{ display: "flex", alignItems: "center" }}>
-              <img className="max-h-[100px] w-20 md:w-full mr-[6px]" src={Logo} alt="NU Logo" />
-              <h1 className="text-white text-[1.5rem] mt-2 md:text-[2rem] font-[200]">NUQX</h1>
+            <div
+              className="ml-[5px] md:ml-0"
+              style={{ display: "flex", alignItems: "center" }}
+            >
+              <img
+                className="max-h-[100px] w-20 md:w-full mr-[6px]"
+                src={Logo}
+                alt="NU Logo"
+              />
+              <h1 className="text-white text-[1.5rem] mt-2 md:text-[2rem] font-[200]">
+                NUQX
+              </h1>
             </div>
           </div>
+          {showLogoutConfirm && (
+            <LogoutModal
+              show={showLogoutConfirm}
+              onClose={handleCancelLogout}
+              onConfirm={handleConfirmLogout}
+            />
+          )}
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-fit rounded-lg px-3 py-1 z-9999 text-lg"
+          >
+            Logout
+          </button>
         </header>
         <div style={styles.yellowLine}></div>
 
@@ -88,11 +124,25 @@ function MainPage() {
             </h2>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "140px" }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: "140px",
+            }}
+          >
             <button
               className="w-[13rem] sm:w-[30rem] sm:h-[5rem] h-[3.5rem] text-base sm:text-2xl"
               onClick={() => handleStart("Student or Guest")}
-              style={{ padding: "10px", borderRadius: "25px", backgroundColor: "#35408E", color: "#fff", border: "none", cursor: "pointer" }}
+              style={{
+                padding: "10px",
+                borderRadius: "25px",
+                backgroundColor: "#35408E",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+              }}
             >
               Student or Guest
             </button>
@@ -100,7 +150,15 @@ function MainPage() {
             <button
               className="w-[13rem] sm:w-[30rem] sm:h-[5rem] h-[3.5rem] text-base sm:text-2xl"
               onClick={() => handleStart("Senior or PWD")}
-              style={{ padding: "10px", borderRadius: "25px", backgroundColor: "#35408E", color: "#fff", border: "none", cursor: "pointer", marginTop: "-100px" }}
+              style={{
+                padding: "10px",
+                borderRadius: "25px",
+                backgroundColor: "#35408E",
+                color: "#fff",
+                border: "none",
+                cursor: "pointer",
+                marginTop: "-100px",
+              }}
             >
               Senior or PWD
             </button>
@@ -108,7 +166,17 @@ function MainPage() {
         </div>
       </main>
       <footer style={styles.footer}>
-        <div style={{ backgroundColor: "#FFD41C", height: "8px", width: "100%", position: "absolute", bottom: 70, left: 0, zIndex: 99 }}></div>
+        <div
+          style={{
+            backgroundColor: "#FFD41C",
+            height: "8px",
+            width: "100%",
+            position: "absolute",
+            bottom: 70,
+            left: 0,
+            zIndex: 99,
+          }}
+        ></div>
       </footer>
     </div>
   );

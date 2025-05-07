@@ -12,6 +12,7 @@ import Services from "./pages/Services";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
 import Transaction from "./pages/Transaction";
+import RoleProtectedRoute from "../../middleware/RoleProtectedRoute";
 
 function App() {
   return (
@@ -21,12 +22,16 @@ function App() {
 
       <main className="flex-1 w-full max-w-[100rem] mx-auto">
         <Routes>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/services" element={<Services />} />
-          <Route path="/staff" element={<Staff />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="/transaction" element={<Transaction />} />
+          <Route
+            element={<RoleProtectedRoute allowedRoles={["departmentHead"]} />}
+          >
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/staff" element={<Staff />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/transaction" element={<Transaction />} />
+          </Route>
         </Routes>
       </main>
     </div>

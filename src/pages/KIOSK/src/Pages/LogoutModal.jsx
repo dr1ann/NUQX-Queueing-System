@@ -1,54 +1,21 @@
+// LogoutModal.jsx
 import React from "react";
 import PropTypes from "prop-types";
 import { useNavigate } from "react-router-dom";
 
-const Modal = ({ show, onClose, onConfirm }) => {
+const LogoutModal = ({ show, onClose, onConfirm }) => {
   const navigate = useNavigate();
 
   if (!show) return null;
 
-  const handleConfirm = async () => {
-    try {
-      // Get user information
-      const user = JSON.parse(localStorage.getItem("user"));
-      console.log("User data at logout:", user);
+  const handleConfirm = () => {
+    localStorage.removeItem("token");
 
-      // Try to release the window on the server
-      try {
-        const response = await fetch(
-          "http://localhost:5000/api/auth/release-window",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: user?.email,
-              windowNumber: user?.windowNumber,
-            }),
-          }
-        );
-
-        const data = await response.json();
-        // First attempt direct logout
-        localStorage.removeItem("token");
-        console.log("Release window response:", data);
-      } catch (releaseError) {
-        console.error("Failed to release window during logout:", releaseError);
-      }
-
-      // Complete the logout process
-      if (onConfirm) {
-        onConfirm();
-      }
-
-      navigate("/");
-    } catch (error) {
-      console.error("Error during logout:", error);
-      // Still ensure logout happens
-      localStorage.removeItem("token");
-      navigate("/");
+    if (onConfirm) {
+      onConfirm();
     }
+
+    navigate("/");
   };
 
   return (
@@ -87,21 +54,17 @@ const Modal = ({ show, onClose, onConfirm }) => {
         }}
       >
         <p
-          className="modal-message"
-          style={{
-            textAlign: "center",
-            margin: "0 0 20px 0",
-            fontSize: "20px",
-          }}
+          className="modal-message text-base"
+          style={{ textAlign: "center", margin: "0 0 20px 0" }}
         >
           Are you sure you want to log out?
         </p>
         <div
           className="modal-actions"
-          style={{ display: "flex", justifyContent: "flex-end", width: "100%" }}
+          style={{ display: "flex", justifyContent: "flex-end", width: "60%" }}
         >
           <button
-            className="modal-cancel"
+            className="modal-cancel text-sm md:text-base"
             onClick={onClose}
             style={{
               color: "#35408E",
@@ -111,14 +74,13 @@ const Modal = ({ show, onClose, onConfirm }) => {
               cursor: "pointer",
               padding: "5px 0px",
               borderRadius: "8px",
-              fontSize: "18px",
               transition: "all 0.3s",
             }}
           >
             No
           </button>
           <button
-            className="modal-submit"
+            className="modal-submit text-sm md:text-base"
             onClick={handleConfirm}
             style={{
               color: "#35408E",
@@ -127,7 +89,6 @@ const Modal = ({ show, onClose, onConfirm }) => {
               cursor: "pointer",
               padding: "5px 0px",
               borderRadius: "8px",
-              fontSize: "18px",
               transition: "all 0.3s",
             }}
           >
@@ -139,10 +100,10 @@ const Modal = ({ show, onClose, onConfirm }) => {
   );
 };
 
-Modal.propTypes = {
+LogoutModal.propTypes = {
   show: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onConfirm: PropTypes.func,
 };
 
-export default Modal;
+export default LogoutModal;

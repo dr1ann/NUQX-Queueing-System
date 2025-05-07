@@ -9,7 +9,6 @@ const Modal = ({ show, onClose, onConfirm }) => {
   if (!show) return null;
 
   const handleConfirm = () => {
-    localStorage.removeItem("user");
     localStorage.removeItem("token");
 
     if (onConfirm) {

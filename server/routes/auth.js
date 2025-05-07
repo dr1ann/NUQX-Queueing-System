@@ -2,6 +2,10 @@ const express = require("express");
 const router = express.Router();
 const { getDb } = require("../connect.cjs");
 const { ObjectId } = require("mongodb");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Login Route
 router.post("/login", async (req, res) => {
@@ -9,13 +13,28 @@ router.post("/login", async (req, res) => {
   const db = getDb();
 
   try {
-    const user = await db.collection("users").findOne({ email, password });
+    const user = await db.collection("users").findOne({ email });
 
-    if (user) {
-      res.status(200).json({ message: "Login successful", role: user.role });
-    } else {
-      res.status(401).json({ message: "Invalid credentials" });
+    if (!user) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
+
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id, email: user.email, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(200).json({
+      message: "Login successful",
+      token,
+      role: user.role,
+    });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ message: "Server error" });
@@ -42,22 +61,33 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ message: "User already exists" });
     }
 
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const newUser = {
       firstName,
       middleName,
       lastName,
       email,
-      password,
+      password: hashedPassword,
       role,
       profileImage,
     };
 
     // Insert new user
-    await db.collection("users").insertOne(newUser);
+    const result = await db.collection("users").insertOne(newUser);
 
-    res
-      .status(201)
-      .json({ message: "User registered successfully", role: role });
+    const token = jwt.sign(
+      { userId: result.insertedId, email, role },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+
+    res.status(201).json({
+      message: "User registered successfully",
+      token,
+      role,
+    });
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({ message: "Server error" });
@@ -371,99 +401,99 @@ router.put("/queue-numbers/:id/update", async (req, res) => {
 // });
 
 // Get assigned windows
-router.get("/windows", async (req, res) => {
-  const db = getDb();
-  try {
-    // Check if windows collection exists, if not create it
-    const collections = await db
-      .listCollections({ name: "windowAssignments" })
-      .toArray();
-    if (collections.length === 0) {
-      await db.createCollection("windowAssignments");
-    }
+// router.get("/windows", async (req, res) => {
+//   const db = getDb();
+//   try {
+//     // Check if windows collection exists, if not create it
+//     const collections = await db
+//       .listCollections({ name: "windowAssignments" })
+//       .toArray();
+//     if (collections.length === 0) {
+//       await db.createCollection("windowAssignments");
+//     }
 
-    const windowAssignments = await db
-      .collection("windowAssignments")
-      .find({})
-      .toArray();
+//     const windowAssignments = await db
+//       .collection("windowAssignments")
+//       .find({})
+//       .toArray();
 
-    res.status(200).json({ windowAssignments });
-  } catch (error) {
-    console.error("Error fetching window assignments:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+//     res.status(200).json({ windowAssignments });
+//   } catch (error) {
+//     console.error("Error fetching window assignments:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
 
-// Assign window to user
-router.post("/assign-window", async (req, res) => {
-  const { email, windowNumber } = req.body;
-  const db = getDb();
+// // Assign window to user
+// router.post("/assign-window", async (req, res) => {
+//   const { email, windowNumber } = req.body;
+//   const db = getDb();
 
-  try {
-    // Check if window is already assigned
-    const existingAssignment = await db
-      .collection("windowAssignments")
-      .findOne({ windowNumber: windowNumber });
+//   try {
+//     // Check if window is already assigned
+//     const existingAssignment = await db
+//       .collection("windowAssignments")
+//       .findOne({ windowNumber: windowNumber });
 
-    if (existingAssignment) {
-      return res.status(400).json({ message: "Window already assigned" });
-    }
+//     if (existingAssignment) {
+//       return res.status(400).json({ message: "Window already assigned" });
+//     }
 
-    // Assign window to user
-    await db.collection("windowAssignments").insertOne({
-      email,
-      windowNumber,
-      assignedAt: new Date(),
-    });
+//     // Assign window to user
+//     await db.collection("windowAssignments").insertOne({
+//       email,
+//       windowNumber,
+//       assignedAt: new Date(),
+//     });
 
-    res.status(200).json({ message: "Window assigned successfully" });
-  } catch (error) {
-    console.error("Error assigning window:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
+//     res.status(200).json({ message: "Window assigned successfully" });
+//   } catch (error) {
+//     console.error("Error assigning window:", error);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// });
 
-// Release window assignment
-router.post("/release-window", async (req, res) => {
-  const { email, windowNumber } = req.body;
-  const db = getDb();
+// // Release window assignment
+// router.post("/release-window", async (req, res) => {
+//   const { email, windowNumber } = req.body;
+//   const db = getDb();
 
-  console.log("Received release request for:", { email, windowNumber }); // Debug log
+//   console.log("Received release request for:", { email, windowNumber }); // Debug log
 
-  try {
-    // Try to find the assignment first
-    const assignment = await db
-      .collection("windowAssignments")
-      .findOne({ email });
+//   try {
+//     // Try to find the assignment first
+//     const assignment = await db
+//       .collection("windowAssignments")
+//       .findOne({ email });
 
-    console.log("Found assignment:", assignment); // Debug log
+//     console.log("Found assignment:", assignment); // Debug log
 
-    if (!assignment) {
-      console.log("No assignment found for email:", email); // Debug log
-      return res
-        .status(404)
-        .json({ message: "No window assigned to this user" });
-    }
+//     if (!assignment) {
+//       console.log("No assignment found for email:", email); // Debug log
+//       return res
+//         .status(404)
+//         .json({ message: "No window assigned to this user" });
+//     }
 
-    // Release window assigned to this user
-    const result = await db
-      .collection("windowAssignments")
-      .deleteOne({ email });
+//     // Release window assigned to this user
+//     const result = await db
+//       .collection("windowAssignments")
+//       .deleteOne({ email });
 
-    console.log("Delete operation result:", result); // Debug log
+//     console.log("Delete operation result:", result); // Debug log
 
-    if (result.deletedCount === 0) {
-      return res
-        .status(404)
-        .json({ message: "Failed to release window, assignment not found" });
-    }
+//     if (result.deletedCount === 0) {
+//       return res
+//         .status(404)
+//         .json({ message: "Failed to release window, assignment not found" });
+//     }
 
-    res.status(200).json({ message: "Window released successfully" });
-  } catch (error) {
-    console.error("Error releasing window:", error);
-    res.status(500).json({ message: "Server error", error: error.message });
-  }
-});
+//     res.status(200).json({ message: "Window released successfully" });
+//   } catch (error) {
+//     console.error("Error releasing window:", error);
+//     res.status(500).json({ message: "Server error", error: error.message });
+//   }
+// });
 
 // Add this new route to reset all window assignments
 // router.post("/reset-all-windows", async (req, res) => {

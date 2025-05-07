@@ -10,11 +10,6 @@ const TransactionInfo = ({
   const [isEditing, setIsEditing] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState(null);
 
-  const handleEditClick = (user) => {
-    setSelectedUser(user);
-    setIsEditing(true);
-  };
-
   const handleToggle = async (id, newState) => {
     try {
       const response = await fetch(

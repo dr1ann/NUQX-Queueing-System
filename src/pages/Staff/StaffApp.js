@@ -13,10 +13,11 @@ import Settings from "./pages/Settings";
 import NULogo from "../../../src/images/NULogo.png";
 import userImage from "../../../src/images/user.png";
 import { RiEyeLine, RiEyeOffLine, RiCameraLine } from "react-icons/ri";
+import RoleProtectedRoute from "../../middleware/RoleProtectedRoute";
 
 function StaffApp() {
   const navigate = useNavigate();
-  const [showDialog, setShowDialog] = useState(true);
+  const [showDialog, setShowDialog] = useState(false);
   const [windowNumber, setWindowNumber] = useState("");
   const [selectedWindow, setSelectedWindow] = useState("");
   const [availableWindows, setAvailableWindows] = useState([1, 2, 3, 4, 5]);
@@ -303,13 +304,15 @@ function StaffApp() {
       )}
       <main className="flex-1 w-full max-w-[100rem] mx-auto">
         <Routes>
-          <Route path="/" element={<Navigate to="/staff/managequeue" />} />
-          <Route
-            path="/managequeue"
-            element={<Managequeue windowNumber={windowNumber} />}
-          />
-          <Route path="/reports" element={<Reports />} />
-          <Route path="/settings" element={<Settings />} />
+          <Route element={<RoleProtectedRoute allowedRoles={["staff"]} />}>
+            <Route path="/" element={<Navigate to="/staff/managequeue" />} />
+            <Route
+              path="/managequeue"
+              element={<Managequeue windowNumber={windowNumber} />}
+            />
+            <Route path="/reports" element={<Reports />} />
+            <Route path="/settings" element={<Settings />} />
+          </Route>
         </Routes>
       </main>
     </div>
