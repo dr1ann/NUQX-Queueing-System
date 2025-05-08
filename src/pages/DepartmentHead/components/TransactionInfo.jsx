@@ -12,11 +12,13 @@ const TransactionInfo = ({
 
   const handleToggle = async (id, newState) => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
         `http://localhost:5000/api/auth/transactions/${id}/toggle`,
         {
           method: "PUT",
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ isOn: newState }),

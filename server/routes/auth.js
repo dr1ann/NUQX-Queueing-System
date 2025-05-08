@@ -4,7 +4,7 @@ const { getDb } = require("../connect.cjs");
 const { ObjectId } = require("mongodb");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
+const authenticateToken = require("../../src/middleware/middlewareAuth");
 const JWT_SECRET = process.env.JWT_SECRET;
 
 // Login Route
@@ -94,15 +94,14 @@ router.post("/register", async (req, res) => {
   }
 });
 
-//Get all staff
-router.get("/staff", async (req, res) => {
+// Get all staff
+router.get("/staff", authenticateToken, async (req, res) => {
   const db = getDb();
   try {
     const staff = await db
       .collection("users")
       .find({ role: "staff" })
       .toArray();
-
     res.status(200).json({ staff });
   } catch (error) {
     console.error("Error fetching staff:", error);
@@ -110,14 +109,14 @@ router.get("/staff", async (req, res) => {
   }
 });
 
-//Add New Transaction
-router.post("/add-transaction", async (req, res) => {
+// Add New Transaction
+router.post("/add-transaction", authenticateToken, async (req, res) => {
   const { transactionID, image, name } = req.body;
   const db = getDb();
 
   try {
     const existingTransaction = await db.collection("transactions").findOne({
-      name: { $regex: `^${name}$`, $options: "i" }, // case-insensitive exact match
+      name: { $regex: `^${name}$`, $options: "i" },
     });
     if (existingTransaction) {
       return res
@@ -134,9 +133,7 @@ router.post("/add-transaction", async (req, res) => {
       createdAt: new Date(),
     };
 
-    // Insert new transaction
     await db.collection("transactions").insertOne(newTransaction);
-
     res.status(201).json({ message: "Transaction added successfully" });
   } catch (error) {
     console.error("Error:", error);
@@ -145,7 +142,7 @@ router.post("/add-transaction", async (req, res) => {
 });
 
 // Edit Transaction
-router.put("/edit-transaction/:id", async (req, res) => {
+router.put("/edit-transaction/:id", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { transactionID, image, name } = req.body;
   const db = getDb();
@@ -159,7 +156,6 @@ router.put("/edit-transaction/:id", async (req, res) => {
       return res.status(404).json({ message: "Transaction not found" });
     }
 
-    // Check if no changes were made
     const noChangesMade =
       (transactionID === undefined ||
         transactionID === existingTransaction.transactionID) &&
@@ -167,21 +163,21 @@ router.put("/edit-transaction/:id", async (req, res) => {
       (name === undefined || name === existingTransaction.name);
 
     if (noChangesMade) {
-      return res.status(400).json({
-        message: "No changes were made to the transaction",
-      });
+      return res
+        .status(400)
+        .json({ message: "No changes were made to the transaction" });
     }
 
     if (name && name !== existingTransaction.name) {
       const duplicateName = await db.collection("transactions").findOne({
-        name: { $regex: `^${name}$`, $options: "i" }, // case-insensitive exact match
+        name: { $regex: `^${name}$`, $options: "i" },
         _id: { $ne: new ObjectId(id) },
       });
 
       if (duplicateName) {
-        return res.status(400).json({
-          message: "Transaction name already exists",
-        });
+        return res
+          .status(400)
+          .json({ message: "Transaction name already exists" });
       }
     }
 
@@ -194,7 +190,6 @@ router.put("/edit-transaction/:id", async (req, res) => {
     await db
       .collection("transactions")
       .updateOne({ _id: new ObjectId(id) }, { $set: updatedTransaction });
-
     res.status(200).json({ message: "Transaction updated successfully" });
   } catch (error) {
     console.error("Error:", error);
@@ -203,7 +198,7 @@ router.put("/edit-transaction/:id", async (req, res) => {
 });
 
 // Reset isIDReset to true for all transactions
-router.put("/reset-id-flags", async (req, res) => {
+router.put("/reset-id-flags", authenticateToken, async (req, res) => {
   const db = getDb();
 
   try {
@@ -221,12 +216,11 @@ router.put("/reset-id-flags", async (req, res) => {
   }
 });
 
-//Get all transactions
-router.get("/transactions", async (req, res) => {
+// Get all transactions
+router.get("/transactions", authenticateToken, async (req, res) => {
   const db = getDb();
   try {
     const transactions = await db.collection("transactions").find().toArray();
-
     res.status(200).json({ transactions });
   } catch (error) {
     console.error("Error fetching transactions:", error);
@@ -234,13 +228,13 @@ router.get("/transactions", async (req, res) => {
   }
 });
 
-//toggling the transaction
-router.put("/transactions/:id/toggle", async (req, res) => {
+// Toggling the transaction
+router.put("/transactions/:id/toggle", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { isOn } = req.body;
 
   try {
-    const db = getDb(); // or use Mongoose: Transaction.findByIdAndUpdate(...)
+    const db = getDb();
     await db
       .collection("transactions")
       .updateOne({ _id: new ObjectId(id) }, { $set: { isOn } });
@@ -252,8 +246,8 @@ router.put("/transactions/:id/toggle", async (req, res) => {
   }
 });
 
-//Generate Queue or Ticket number
-router.post("/generate-queue-number", async (req, res) => {
+// Generate Queue or Ticket number
+router.post("/generate-queue-number", authenticateToken, async (req, res) => {
   const { isIDReset, transactionID, userType } = req.body;
   const db = getDb();
 
@@ -269,36 +263,28 @@ router.post("/generate-queue-number", async (req, res) => {
 
     if (isIDReset) {
       newNumber = "001";
-
       await db
         .collection("transactions")
         .updateOne({ transactionID }, { $set: { isIDReset: false } });
     } else if (latestQueue.length > 0) {
       const lastQueue = latestQueue[0];
-      // Match the last 3 digits (queue ID) and exclude " -PL" suffix
       const match = lastQueue.generatedQueuenumber.match(
         /(\d{3})(?=\s*(-PL)?$)/
       );
 
       if (match) {
         const lastNum = parseInt(match[1], 10);
-
-        // Check for overflow (999 -> 001)
-        if (lastNum === 999) {
-          newNumber = "001"; // reset to 001 when overflow happens
-        } else {
-          const incremented = lastNum + 1;
-          newNumber = incremented.toString().padStart(3, "0");
-        }
+        newNumber =
+          lastNum === 999 ? "001" : (lastNum + 1).toString().padStart(3, "0");
       } else {
-        newNumber = "001"; // fallback if no match
+        newNumber = "001";
       }
     } else {
-      newNumber = "001"; // first ever queue for this transaction
+      newNumber = "001";
     }
 
-    const isPriority = userType === "Senior or PWD" ? true : false;
-    const isPriorityString = userType === "Senior or PWD" ? " -PL" : "";
+    const isPriority = userType === "Senior or PWD";
+    const isPriorityString = isPriority ? " -PL" : "";
     const generatedQueuenumber = transactionID + newNumber + isPriorityString;
 
     const newQueue = {
@@ -322,12 +308,11 @@ router.post("/generate-queue-number", async (req, res) => {
   }
 });
 
-//Get all queue numbers
-router.get("/queue-numbers", async (req, res) => {
+// Get all queue numbers
+router.get("/queue-numbers", authenticateToken, async (req, res) => {
   const db = getDb();
   try {
     const queueNumbers = await db.collection("queue-numbers").find().toArray();
-
     res.status(200).json({ queueNumbers });
   } catch (error) {
     console.error("Error fetching queuenumbers:", error);
@@ -335,8 +320,8 @@ router.get("/queue-numbers", async (req, res) => {
   }
 });
 
-//updating a queue
-router.put("/queue-numbers/:id/update", async (req, res) => {
+// Updating a queue
+router.put("/queue-numbers/:id/update", authenticateToken, async (req, res) => {
   const { id } = req.params;
   const { status, windowNumber } = req.body;
 
@@ -368,7 +353,7 @@ router.put("/queue-numbers/:id/update", async (req, res) => {
       {
         $set: {
           status,
-          ...(windowNumber !== undefined && { windowNumber }), // Only set if provided
+          ...(windowNumber !== undefined && { windowNumber }),
         },
       }
     );
@@ -380,141 +365,96 @@ router.put("/queue-numbers/:id/update", async (req, res) => {
   }
 });
 
-// Reset
-// router.post("/reset-all-queue-number-id", async (req, res) => {
-//   const db = getDb();
-
-//   try {
-//     // Delete all window assignments
-//     const result = await db.collection("windowAssignments").deleteMany({});
-
-//     console.log("Reset result:", result);
-
-//     res.status(200).json({
-//       message: "All window assignments have been reset",
-//       deletedCount: result.deletedCount,
-//     });
-//   } catch (error) {
-//     console.error("Error resetting window assignments:", error);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// });
-
 // Get assigned windows
-// router.get("/windows", async (req, res) => {
-//   const db = getDb();
-//   try {
-//     // Check if windows collection exists, if not create it
-//     const collections = await db
-//       .listCollections({ name: "windowAssignments" })
-//       .toArray();
-//     if (collections.length === 0) {
-//       await db.createCollection("windowAssignments");
-//     }
+router.get("/windows", authenticateToken, async (req, res) => {
+  const db = getDb();
 
-//     const windowAssignments = await db
-//       .collection("windowAssignments")
-//       .find({})
-//       .toArray();
+  try {
+    const assignedWindows = await db
+      .collection("windowAssignments")
+      .find({})
+      .toArray();
 
-//     res.status(200).json({ windowAssignments });
-//   } catch (error) {
-//     console.error("Error fetching window assignments:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
+    res.status(200).json({ windowAssignments: assignedWindows });
+  } catch (error) {
+    console.error("Error fetching assigned windows:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 // // Assign window to user
-// router.post("/assign-window", async (req, res) => {
-//   const { email, windowNumber } = req.body;
-//   const db = getDb();
+router.post("/assign-window", authenticateToken, async (req, res) => {
+  const { windowNumber } = req.body;
+  const email = req.user.email;
+  const db = getDb();
 
-//   try {
-//     // Check if window is already assigned
-//     const existingAssignment = await db
-//       .collection("windowAssignments")
-//       .findOne({ windowNumber: windowNumber });
+  try {
+    const existingAssignment = await db
+      .collection("windowAssignments")
+      .findOne({ windowNumber });
 
-//     if (existingAssignment) {
-//       return res.status(400).json({ message: "Window already assigned" });
-//     }
+    if (existingAssignment) {
+      return res.status(400).json({ message: "Window already assigned" });
+    }
 
-//     // Assign window to user
-//     await db.collection("windowAssignments").insertOne({
-//       email,
-//       windowNumber,
-//       assignedAt: new Date(),
-//     });
+    await db.collection("windowAssignments").insertOne({
+      email,
+      windowNumber,
+      assignedAt: new Date(),
+    });
 
-//     res.status(200).json({ message: "Window assigned successfully" });
-//   } catch (error) {
-//     console.error("Error assigning window:", error);
-//     res.status(500).json({ message: "Server error" });
-//   }
-// });
+    const user = await db.collection("users").findOne({ email });
 
-// // Release window assignment
-// router.post("/release-window", async (req, res) => {
-//   const { email, windowNumber } = req.body;
-//   const db = getDb();
+    // Create a new token that includes windowNumber
+    const newToken = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+        role: user.role,
+        windowNumber,
+      },
+      JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    res.status(200).json({
+      message: "Window assigned successfully",
+      token: newToken,
+    });
+  } catch (error) {
+    console.error("Error assigning window:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
-//   console.log("Received release request for:", { email, windowNumber }); // Debug log
+// Release window assignment
+router.delete("/release-window", authenticateToken, async (req, res) => {
+  const email = req.user.email;
+  const db = getDb();
 
-//   try {
-//     // Try to find the assignment first
-//     const assignment = await db
-//       .collection("windowAssignments")
-//       .findOne({ email });
+  try {
+    const assignment = await db
+      .collection("windowAssignments")
+      .findOne({ email });
 
-//     console.log("Found assignment:", assignment); // Debug log
+    if (!assignment) {
+      return res
+        .status(404)
+        .json({ message: "No window assigned to this user" });
+    }
 
-//     if (!assignment) {
-//       console.log("No assignment found for email:", email); // Debug log
-//       return res
-//         .status(404)
-//         .json({ message: "No window assigned to this user" });
-//     }
+    const result = await db
+      .collection("windowAssignments")
+      .deleteOne({ email });
 
-//     // Release window assigned to this user
-//     const result = await db
-//       .collection("windowAssignments")
-//       .deleteOne({ email });
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "Failed to release window" });
+    }
 
-//     console.log("Delete operation result:", result); // Debug log
-
-//     if (result.deletedCount === 0) {
-//       return res
-//         .status(404)
-//         .json({ message: "Failed to release window, assignment not found" });
-//     }
-
-//     res.status(200).json({ message: "Window released successfully" });
-//   } catch (error) {
-//     console.error("Error releasing window:", error);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// });
-
-// Add this new route to reset all window assignments
-// router.post("/reset-all-windows", async (req, res) => {
-//   const db = getDb();
-
-//   try {
-//     console.log("Attempting to reset all window assignments");
-
-//     // Delete all window assignments
-//     const result = await db.collection("windowAssignments").deleteMany({});
-
-//     console.log("Reset result:", result);
-
-//     res.status(200).json({
-//       message: "All window assignments have been reset",
-//       deletedCount: result.deletedCount,
-//     });
-//   } catch (error) {
-//     console.error("Error resetting window assignments:", error);
-//     res.status(500).json({ message: "Server error", error: error.message });
-//   }
-// });
+    res.status(200).json({ message: "Window released successfully" });
+  } catch (error) {
+    console.error("Error releasing window:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;

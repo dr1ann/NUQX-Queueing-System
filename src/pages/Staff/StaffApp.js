@@ -25,10 +25,31 @@ function StaffApp() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+  const checkUserWindow = () => {
+    const token = localStorage.getItem("token");
+    if (!token) return false;
+    const user = JSON.parse(atob(token.split(".")[1]));
+    console.log(user);
+    return user?.windowNumber;
+  };
+
+  useEffect(() => {
+    if (!checkUserWindow()) {
+      setShowDialog(true);
+    } else {
+      setShowDialog(false);
+    }
+  }, []);
+
   const fetchAssignedWindows = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:5000/api/auth/windows");
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/auth/windows", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error(`API error: ${response.status}`);
@@ -48,35 +69,22 @@ function StaffApp() {
     }
   };
 
-  const releaseWindow = async (email) => {
-    try {
-      const response = await fetch(
-        "http://localhost:5000/api/auth/release-window",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error("Failed to release window");
-      }
-
-      fetchAssignedWindows();
-      return true;
-    } catch (error) {
-      console.error("Error releasing window:", error);
-      return false;
-    }
-  };
-
   useEffect(() => {
     fetchAssignedWindows();
     const intervalId = setInterval(fetchAssignedWindows, 5000);
     return () => clearInterval(intervalId);
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    try {
+      const user = JSON.parse(atob(token.split(".")[1]));
+      setWindowNumber(user?.windowNumber || "");
+    } catch (e) {
+      console.error("Invalid token", e);
+    }
   }, []);
 
   const handleConfirm = async () => {
@@ -90,7 +98,7 @@ function StaffApp() {
         return;
       }
 
-      const user = JSON.parse(localStorage.getItem("user")) || {};
+      const token = localStorage.getItem("token");
 
       const response = await fetch(
         "http://localhost:5000/api/auth/assign-window",
@@ -98,10 +106,9 @@ function StaffApp() {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            email: user.email,
             windowNumber: selectedWindow,
           }),
         }
@@ -112,12 +119,10 @@ function StaffApp() {
         throw new Error(errorData.message || "Failed to assign window");
       }
 
-      user.selectedWindow = selectedWindow;
-      localStorage.setItem("user", JSON.stringify(user));
-
+      const data = await response.json();
+      localStorage.setItem("token", data.token);
       setWindowNumber(selectedWindow);
       setShowDialog(false);
-      navigate("/staff/managequeue");
     } catch (error) {
       console.error("Error assigning window:", error);
       setErrorMessage(
@@ -143,6 +148,8 @@ function StaffApp() {
 
   const isWindowAssigned = (windowNum) => {
     if (!windowNum) return false;
+    const userWindow = checkUserWindow();
+    if (parseInt(windowNum) === parseInt(userWindow)) return false; // allow own window
     return assignedWindows.includes(parseInt(windowNum));
   };
 

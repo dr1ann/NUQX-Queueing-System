@@ -17,7 +17,12 @@ const Staff = () => {
 
   const fetchStaff = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/auth/staff");
+      const token = localStorage.getItem("token");
+      const response = await fetch("http://localhost:5000/api/auth/staff", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       if (response.ok) {
         const data = await response.json();
         setStaff(data.staff);

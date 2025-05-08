@@ -28,8 +28,14 @@ function StartPage() {
 
   const fetchTransactions = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/auth/transactions"
+        "http://localhost:5000/api/auth/transactions",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (response.ok) {
         const data = await response.json();

@@ -9,45 +9,36 @@ const Modal = ({ show, onClose, onConfirm }) => {
 
   const handleConfirm = async () => {
     try {
-      // Get user information
-      const user = JSON.parse(localStorage.getItem("user"));
-      console.log("User data at logout:", user);
+      const token = localStorage.getItem("token");
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const response = await fetch(
+        "http://localhost:5000/api/auth/release-window",
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            windowNumber: payload?.windowNumber,
+          }),
+        }
+      );
 
-      // Try to release the window on the server
-      try {
-        const response = await fetch(
-          "http://localhost:5000/api/auth/release-window",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: user?.email,
-              windowNumber: user?.windowNumber,
-            }),
-          }
-        );
+      const data = await response.json();
+      console.log("Release window response:", data);
 
-        const data = await response.json();
-        // First attempt direct logout
+      if (response.ok) {
         localStorage.removeItem("token");
-        console.log("Release window response:", data);
-      } catch (releaseError) {
-        console.error("Failed to release window during logout:", releaseError);
+        if (onConfirm) {
+          onConfirm();
+        }
+      } else {
+        alert(data.message || "Failed to release window");
       }
-
-      // Complete the logout process
-      if (onConfirm) {
-        onConfirm();
-      }
-
-      navigate("/");
     } catch (error) {
-      console.error("Error during logout:", error);
-      // Still ensure logout happens
-      localStorage.removeItem("token");
-      navigate("/");
+      console.error("Error during release window:", error);
+      alert("Error occurred while releasing the window");
     }
   };
 

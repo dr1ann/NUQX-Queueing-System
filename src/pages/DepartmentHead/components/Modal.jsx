@@ -14,8 +14,6 @@ const Modal = ({ show, onClose, onConfirm }) => {
     if (onConfirm) {
       onConfirm();
     }
-
-    navigate("/");
   };
 
   return (

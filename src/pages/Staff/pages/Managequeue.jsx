@@ -23,8 +23,14 @@ function Managequeue({ windowNumber }) {
 
   const fetchQueueNumbers = async () => {
     try {
+      const token = localStorage.getItem("token");
       const response = await fetch(
-        "http://localhost:5000/api/auth/queue-numbers"
+        "http://localhost:5000/api/auth/queue-numbers",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (response.ok) {
         const data = await response.json();
@@ -40,11 +46,14 @@ function Managequeue({ windowNumber }) {
 
   const handleUpdate = async (id, newStatus) => {
     try {
+      const token = localStorage.getItem("token");
+
       const response = await fetch(
         `http://localhost:5000/api/auth/queue-numbers/${id}/update`,
         {
           method: "PUT",
           headers: {
+            Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({ status: newStatus, windowNumber }),

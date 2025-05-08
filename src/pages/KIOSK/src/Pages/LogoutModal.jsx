@@ -14,8 +14,6 @@ const LogoutModal = ({ show, onClose, onConfirm }) => {
     if (onConfirm) {
       onConfirm();
     }
-
-    navigate("/");
   };
 
   return (
