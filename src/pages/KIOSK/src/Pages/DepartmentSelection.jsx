@@ -1,18 +1,24 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import "../Style.css";
 import Logo from "../../../../images/NULogo.png";
+import registrarIcon from "../../../../images/edit-2.png";
+import admissionsIcon from "../../../../images/teacher.png";
+import accountingIcon from "../../../../images/card-tick.png";
 import BackgroundImage from "../../../../images/NU-Manila.svg";
 import LogoutModal from "./LogoutModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { RiLogoutCircleLine } from "react-icons/ri";
 
-function MainPage() {
+function DepartmentSelection() {
   const navigate = useNavigate();
 
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const { state } = useLocation();
 
-  const handleStart = (userType) => {
-    navigate("/kiosk/department", { state: { userType } });
+  const handleStart = (department) => {
+    navigate("/startpage", {
+      state: { department, userType: state?.userType },
+    });
   };
 
   const handleConfirmLogout = () => {
@@ -23,6 +29,17 @@ function MainPage() {
   const handleCancelLogout = () => {
     setShowLogoutConfirm(false);
   };
+
+  const handleBack = () => {
+    navigate("/mainpage");
+  };
+
+  useEffect(() => {
+    if (!state?.userType) {
+      navigate("/kiosk");
+      return;
+    }
+  }, []);
 
   const styles = {
     pageContainer: {
@@ -84,7 +101,6 @@ function MainPage() {
   return (
     <div>
       <main className="flex flex-col flex-1 min-h-screen">
-        <div style={styles.background}></div>
         <header style={styles.header}>
           <div style={styles.logoContainer}>
             <div
@@ -117,54 +133,75 @@ function MainPage() {
         </header>
         <div style={styles.yellowLine}></div>
 
-        <div className="flex flex-col items-center justify-center m-auto">
-          <div style={{ textAlign: "center", marginTop: "50px" }}>
-            <h2 className="text-lg sm:text-[2rem] mb-6 font-bold uppercase bg-white/70 px-4 py-2 rounded-lg">
-              Select your user type:
-            </h2>
-          </div>
+        <div className="mt-10 text-center">
+          <h2 className="text-[1.7rem] px-4 sm:text-[2.5rem] font-bold uppercase">
+            Choose Department:
+          </h2>
+        </div>
 
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "140px",
-            }}
-          >
+        <div className="flex flex-wrap items-center justify-center mt-6 gap-4 px-4">
+          <div>
             <button
-              className="w-[13rem] sm:w-[30rem] sm:h-[5rem] h-[3.5rem] text-base sm:text-2xl"
-              onClick={() => handleStart("Student or Guest")}
-              style={{
-                padding: "10px",
-                borderRadius: "25px",
-                backgroundColor: "#35408E",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-              }}
+              className="icon-button"
+              onClick={() => handleStart("registrar")}
             >
-              Student or Guest
+              <img
+                src={registrarIcon}
+                className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px]"
+                alt="Transaction icon"
+              />
+              <span className="button-text">Registrar</span>
             </button>
-
+          </div>
+          <div>
             <button
-              className="w-[13rem] sm:w-[30rem] sm:h-[5rem] h-[3.5rem] text-base sm:text-2xl"
-              onClick={() => handleStart("Senior or PWD")}
-              style={{
-                padding: "10px",
-                borderRadius: "25px",
-                backgroundColor: "#35408E",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-                marginTop: "-100px",
-              }}
+              className="icon-button"
+              onClick={() => handleStart("accounting")}
             >
-              Senior or PWD
+              <img
+                src={accountingIcon}
+                className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px]"
+                alt="Accounting icon"
+              />
+              <span className="button-text">Accounting</span>
+            </button>
+          </div>
+          <div>
+            <button
+              className="icon-button"
+              onClick={() => handleStart("admissions")}
+            >
+              <img
+                src={admissionsIcon}
+                className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px]"
+                alt="Admissions icon"
+              />
+              <span className="button-text">Admissions</span>
             </button>
           </div>
         </div>
+
+        <div className="action-buttons mb-4 mt-6 text-center">
+          <button
+            onClick={handleBack}
+            style={{
+              width: "150px",
+              height: "50px",
+              fontSize: "16px",
+              padding: "10px",
+              borderRadius: "25px",
+              backgroundColor: "#FFD41C",
+              color: "#35408E",
+              border: "none",
+              cursor: "pointer",
+              margin: "0 10px",
+            }}
+          >
+            Back
+          </button>
+        </div>
       </main>
+
       <footer style={styles.footer}>
         <div
           style={{
@@ -182,4 +219,4 @@ function MainPage() {
   );
 }
 
-export default MainPage;
+export default DepartmentSelection;

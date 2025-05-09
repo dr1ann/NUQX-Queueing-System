@@ -11,6 +11,7 @@ const AddDeptHead = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [department, setDepartment] = useState("");
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -28,6 +29,7 @@ const AddDeptHead = () => {
     setMiddleName("");
     setLastName("");
     setEmail("");
+    setDepartment("");
     setPassword("");
     setConfirmPassword("");
   };
@@ -60,6 +62,7 @@ const AddDeptHead = () => {
           email,
           password,
           role: "departmentHead", // hardcoded
+          department,
           profileImage: selectedImage,
         }),
       });
@@ -235,6 +238,24 @@ const AddDeptHead = () => {
               style={{ display: "none" }}
               onChange={handleImageUpload}
             />
+          </div>
+
+          <div className="w-3/4 mb-4 mx-auto">
+            <label style={labelStyle}>Department</label>
+            <select
+              required
+              style={inputStyle}
+              className="text-sm md:text-base"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+            >
+              <option value="" disabled>
+                Select department
+              </option>
+              <option value="admissions">Admissions</option>
+              <option value="registrar">Registrar</option>
+              <option value="accounting">Accounting</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[15px]">

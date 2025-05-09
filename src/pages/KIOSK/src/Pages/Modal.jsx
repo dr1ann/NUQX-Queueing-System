@@ -8,6 +8,7 @@ function Modal({
   isIDReset,
   transactionID,
   userType,
+  department,
   details,
 }) {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ function Modal({
             isIDReset,
             transactionID,
             userType,
+            department,
           }),
         }
       );

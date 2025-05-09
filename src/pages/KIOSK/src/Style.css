@@ -8,37 +8,51 @@
 
 .icon-button {
   text-decoration: none;
-  background-color: #35408E;
+  background-color: #35408e;
   color: white;
   border: none;
-  padding: 30px 20px; 
+  padding: 30px 20px;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  width: 130px; 
-  height: 130px; 
+  width: 130px;
+  height: 130px;
   box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
   .icon-button {
-    width: 200px !important; 
-    height: 200px !important; 
-    padding: 40px 30px !important; 
+    width: 200px !important;
+    height: 200px !important;
+    padding: 40px 30px !important;
   }
   .icon {
-    font-size: 70px !important; 
+    font-size: 70px !important;
   }
   .button-text {
     font-size: 22px !important;
   }
 }
 
+@media (min-width: 1024px) {
+  .icon-button {
+    width: 250px !important;
+    height: 250px !important;
+    padding: 50px 35px !important;
+  }
+  .icon {
+    font-size: 90px !important;
+  }
+  .button-text {
+    font-size: 26px !important;
+  }
+}
+
 .icon {
-  font-size: 40px; 
+  font-size: 40px;
   margin-bottom: 10px;
 }
 
@@ -57,7 +71,7 @@
 }
 
 .action-button {
-  background-color: #35408E;
+  background-color: #35408e;
   color: white;
   border: none;
   border-radius: 12px;
@@ -72,4 +86,3 @@
 .action-button:hover {
   background-color: #2d387c;
 }
-

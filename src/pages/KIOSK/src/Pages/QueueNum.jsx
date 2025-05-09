@@ -2,15 +2,26 @@ import React, { useEffect, useState, useRef } from "react";
 import "../base.css";
 import Logo from "../../../../images/NULogo.png";
 import { useNavigate, useLocation } from "react-router-dom";
+import LogoutModal from "./LogoutModal";
 
 function QueueNum() {
   const navigate = useNavigate();
   const location = useLocation();
 
   const queueNumber = location.state?.queueNumber;
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleDoneClick = () => {
     navigate("/kiosk");
+  };
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    navigate("/login");
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
   };
 
   const styles = {
@@ -19,6 +30,7 @@ function QueueNum() {
       height: "80px",
       display: "flex",
       alignItems: "center",
+      justifyContent: "space-between",
       padding: "0 20px",
     },
     logoContainer: {
@@ -75,6 +87,19 @@ function QueueNum() {
               </h1>
             </div>
           </div>
+          {showLogoutConfirm && (
+            <LogoutModal
+              show={showLogoutConfirm}
+              onClose={handleCancelLogout}
+              onConfirm={handleConfirmLogout}
+            />
+          )}
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-fit rounded-lg px-3 py-1 z-9999 text-lg"
+          >
+            Logout
+          </button>
         </header>
 
         <div style={styles.yellowLine}></div>

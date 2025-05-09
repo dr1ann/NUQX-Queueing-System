@@ -1,11 +1,12 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import homepage from "../images/newlogo.webp";
-import Logo from "../images/NULogo.png";
-import { RiQuestionLine } from "react-icons/ri";
+import Logo from "../../../../images/NULogo.png";
+import registrarIcon from "../../../../images/edit-2.png";
+import admissionsIcon from "../../../../images/teacher.png";
+import accountingIcon from "../../../../images/card-tick.png";
 import { Link } from "react-router-dom";
 
-function HomePage() {
+function Step1Guide() {
   const navigate = useNavigate();
 
   const styles = {
@@ -115,60 +116,54 @@ function HomePage() {
           </header>
           <div style={styles.yellowLine}></div>
         </div>
-        <div className="flex flex-col lg:flex-row px-4 items-center gap-4 md:gap-10 w-full max-w-[130rem] mx-auto">
-          <div>
+        <div className="flex flex-col lg:flex-row items-center gap-4 md:gap-10 w-full max-w-[130rem] mx-auto">
+          <div className="flex flex-col text-white grow bg-[#35408e] h-full w-full  justify-center px-4">
             <h1 className="text-2xl font-bold uppercase md:text-4xl text-center md:text-left text-black">
-              Welcome to NUQX
+              Select a Department
             </h1>
-            <img
-              src={homepage}
-              alt="Home Page"
-              className="w-[90%] mx-auto sm:w-1/2 lg:w-[30rem] xl:w-[40rem] 2xl:w-[45rem] rounded-2xl border-[2px] border-[#35408E]"
-            />
+            <p>1. Choose a Department:</p>
+            <span>Enrollment, Admission, or Treasury</span>
           </div>
 
-          <div className="flex flex-col items-start pt-0 lg:pt-10">
-            <div className="grid grid-cols-2 w-full gap-4 text-white">
-              <div className="flex flex-col p-4 bg-[#35408E] rounded-2xl">
-                <h1 className="text-lg lg:text-3xl font-semibold">
-                  New Student
-                </h1>
-                <span className="text-sm lg:text-xl">
-                  For freshmen or transferees enrolling at NU for the first
-                  time.
-                </span>
-              </div>
-              <div className="flex flex-col p-4 bg-[#35408E] rounded-2xl">
-                <h1 className="text-lg lg:text-3xl font-semibold">
-                  Continuing
-                </h1>
-                <span className="text-sm lg:text-xl">
-                  For returning students currently enrolled at NU.
-                </span>
-              </div>
-            </div>
-            <div className="flex flex-col my-4 w-full justify-center text-white p-4 bg-[#35408E] rounded-2xl">
-              <h1 className="text-lg lg:text-3xl font-semibold">Priority</h1>
-              <span className="text-sm lg:text-xl">
-                For Senior citezens (60+) or persons with disabilities who need
-                accessible, prioritized services.
-              </span>
-            </div>
-            <div className="flex gap-3">
+          <div className="flex flex-wrap items-center justify-center mt-6 gap-4 px-4">
+            <div>
               <button
-                className="text-sm sm:text-base xl:text-xl"
-                style={styles.homepageBtn}
-                onClick={() => navigate("/login")}
+                className="icon-button"
+                onClick={() => handleStart("registrar")}
               >
-                LOGIN
+                <img
+                  src={registrarIcon}
+                  className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px]"
+                  alt="Transaction icon"
+                />
+                <span className="button-text">Registrar</span>
               </button>
-              <Link
-                to="/"
-                className="flex items-center text-[#35408E] hover:underline text-lg space-x-1"
+            </div>
+            <div>
+              <button
+                className="icon-button"
+                onClick={() => handleStart("accounting")}
               >
-                <RiQuestionLine className="w-5 h-5" />
-                <span>How to use the system</span>
-              </Link>
+                <img
+                  src={accountingIcon}
+                  className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px]"
+                  alt="Accounting icon"
+                />
+                <span className="button-text">Accounting</span>
+              </button>
+            </div>
+            <div>
+              <button
+                className="icon-button"
+                onClick={() => handleStart("admissions")}
+              >
+                <img
+                  src={admissionsIcon}
+                  className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px]"
+                  alt="Admissions icon"
+                />
+                <span className="button-text">Admissions</span>
+              </button>
             </div>
           </div>
         </div>
@@ -191,4 +186,4 @@ function HomePage() {
   );
 }
 
-export default HomePage;
+export default Step1Guide;

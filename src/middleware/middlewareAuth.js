@@ -10,14 +10,20 @@ const authenticateToken = (req, res, next) => {
       .json({ message: "Access denied. No token provided." });
   }
 
-  const token = authHeader.split(" ")[1];
+  const token = authHeader.split(" ")[1].trim();
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(403).json({ message: "Invalid or expired token" });
+    if (error.name === "TokenExpiredError") {
+      return res
+        .status(401)
+        .json({ message: "Token expired. Please login again." });
+    }
+    return res.status(403).json({ message: "Invalid token." });
   }
 };
 

@@ -24,11 +24,25 @@ router.post("/login", async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign(
-      { userId: user._id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    const payload = {
+      userId: user._id,
+      firstName: user.firstName,
+      middleName: user.middleName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      profileImage: user.profileImage,
+    };
+
+    if (
+      user.role === "staff" ||
+      user.role === "departmentHead" ||
+      user.role === "display"
+    ) {
+      payload.department = user.department;
+    }
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
 
     res.status(200).json({
       message: "Login successful",
@@ -50,6 +64,7 @@ router.post("/register", async (req, res) => {
     email,
     password,
     role,
+    department,
     profileImage,
   } = req.body;
   const db = getDb();
@@ -64,6 +79,7 @@ router.post("/register", async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Prepare the new user object
     const newUser = {
       firstName,
       middleName,
@@ -74,17 +90,33 @@ router.post("/register", async (req, res) => {
       profileImage,
     };
 
-    // Insert new user
+    // Conditionally add department to newUser if the role is 'staff' or 'departmentHead'
+    if (role === "staff" || role === "departmentHead" || role === "display") {
+      newUser.department = department;
+    }
+
+    // Insert new user into the database
     const result = await db.collection("users").insertOne(newUser);
 
-    const token = jwt.sign(
-      { userId: result.insertedId, email, role },
-      JWT_SECRET,
-      { expiresIn: "1h" }
-    );
+    // Prepare the payload for JWT
+    const payload = {
+      userId: result.insertedId,
+      firstName,
+      middleName,
+      lastName,
+      email,
+      role,
+      profileImage,
+    };
+
+    if (role === "staff" || role === "departmentHead" || role === "display") {
+      payload.department = department;
+    }
+
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
 
     res.status(201).json({
-      message: "User registered successfully",
+      message: "Registered successfully",
       token,
       role,
     });
@@ -96,11 +128,13 @@ router.post("/register", async (req, res) => {
 
 // Get all staff
 router.get("/staff", authenticateToken, async (req, res) => {
+  const { department } = req.user;
   const db = getDb();
+
   try {
     const staff = await db
       .collection("users")
-      .find({ role: "staff" })
+      .find({ role: "staff", department })
       .toArray();
     res.status(200).json({ staff });
   } catch (error) {
@@ -112,11 +146,13 @@ router.get("/staff", authenticateToken, async (req, res) => {
 // Add New Transaction
 router.post("/add-transaction", authenticateToken, async (req, res) => {
   const { transactionID, image, name } = req.body;
+  const { department } = req.user;
   const db = getDb();
 
   try {
     const existingTransaction = await db.collection("transactions").findOne({
       name: { $regex: `^${name}$`, $options: "i" },
+      department: department,
     });
     if (existingTransaction) {
       return res
@@ -130,6 +166,7 @@ router.post("/add-transaction", authenticateToken, async (req, res) => {
       name,
       isOn: true,
       isIDReset: false,
+      department,
       createdAt: new Date(),
     };
 
@@ -148,9 +185,9 @@ router.put("/edit-transaction/:id", authenticateToken, async (req, res) => {
   const db = getDb();
 
   try {
-    const existingTransaction = await db
-      .collection("transactions")
-      .findOne({ _id: new ObjectId(id) });
+    const existingTransaction = await db.collection("transactions").findOne({
+      _id: new ObjectId(id),
+    });
 
     if (!existingTransaction) {
       return res.status(404).json({ message: "Transaction not found" });
@@ -171,6 +208,7 @@ router.put("/edit-transaction/:id", authenticateToken, async (req, res) => {
     if (name && name !== existingTransaction.name) {
       const duplicateName = await db.collection("transactions").findOne({
         name: { $regex: `^${name}$`, $options: "i" },
+        department: existingTransaction.department,
         _id: { $ne: new ObjectId(id) },
       });
 
@@ -199,12 +237,13 @@ router.put("/edit-transaction/:id", authenticateToken, async (req, res) => {
 
 // Reset isIDReset to true for all transactions
 router.put("/reset-id-flags", authenticateToken, async (req, res) => {
+  const { department } = req.user;
   const db = getDb();
 
   try {
     const result = await db
       .collection("transactions")
-      .updateMany({}, { $set: { isIDReset: true } });
+      .updateMany({ department }, { $set: { isIDReset: true } });
 
     res.status(200).json({
       message: "All transactions have isIDReset set to true",
@@ -217,10 +256,20 @@ router.put("/reset-id-flags", authenticateToken, async (req, res) => {
 });
 
 // Get all transactions
-router.get("/transactions", authenticateToken, async (req, res) => {
+router.post("/transactions", authenticateToken, async (req, res) => {
+  const { role, department } = req.user;
+  const { selectedDepartment } = req.body;
   const db = getDb();
+
   try {
-    const transactions = await db.collection("transactions").find().toArray();
+    const query = {
+      department: role === "departmentHead" ? department : selectedDepartment,
+    };
+
+    const transactions = await db
+      .collection("transactions")
+      .find(query)
+      .toArray();
     res.status(200).json({ transactions });
   } catch (error) {
     console.error("Error fetching transactions:", error);
@@ -248,7 +297,7 @@ router.put("/transactions/:id/toggle", authenticateToken, async (req, res) => {
 
 // Generate Queue or Ticket number
 router.post("/generate-queue-number", authenticateToken, async (req, res) => {
-  const { isIDReset, transactionID, userType } = req.body;
+  const { isIDReset, transactionID, userType, department } = req.body;
   const db = getDb();
 
   try {
@@ -294,6 +343,7 @@ router.post("/generate-queue-number", authenticateToken, async (req, res) => {
       status: "Waiting",
       windowNumber: "",
       createdAt: new Date(),
+      department,
     };
 
     await db.collection("queue-numbers").insertOne(newQueue);
@@ -310,9 +360,13 @@ router.post("/generate-queue-number", authenticateToken, async (req, res) => {
 
 // Get all queue numbers
 router.get("/queue-numbers", authenticateToken, async (req, res) => {
+  const { department } = req.user;
   const db = getDb();
   try {
-    const queueNumbers = await db.collection("queue-numbers").find().toArray();
+    const queueNumbers = await db
+      .collection("queue-numbers")
+      .find({ department })
+      .toArray();
     res.status(200).json({ queueNumbers });
   } catch (error) {
     console.error("Error fetching queuenumbers:", error);
@@ -353,6 +407,7 @@ router.put("/queue-numbers/:id/update", authenticateToken, async (req, res) => {
       {
         $set: {
           status,
+          updatedAt: new Date(),
           ...(windowNumber !== undefined && { windowNumber }),
         },
       }
@@ -409,9 +464,14 @@ router.post("/assign-window", authenticateToken, async (req, res) => {
     const newToken = jwt.sign(
       {
         userId: user._id,
+        firstName: user.firstName,
+        middleName: user.middleName,
+        lastName: user.lastName,
         email: user.email,
         role: user.role,
         windowNumber,
+        department: user.department,
+        profileImage: user.profileImage,
       },
       JWT_SECRET,
       { expiresIn: "1h" }
@@ -423,6 +483,24 @@ router.post("/assign-window", authenticateToken, async (req, res) => {
   } catch (error) {
     console.error("Error assigning window:", error);
     res.status(500).json({ message: "Server error" });
+  }
+});
+
+router.get("/my-window", authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.user;
+    const db = getDb();
+
+    const user = await db.collection("windowAssignments").findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User Window not found." });
+    }
+
+    res.json({ windowNumber: user.windowNumber || null });
+  } catch (error) {
+    console.error("Error fetching user window:", error);
+    res.status(500).json({ message: "Server error." });
   }
 });
 

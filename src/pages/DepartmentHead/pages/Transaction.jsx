@@ -19,7 +19,9 @@ const Transaction = () => {
       const response = await fetch(
         "http://localhost:5000/api/auth/transactions",
         {
+          method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
         }

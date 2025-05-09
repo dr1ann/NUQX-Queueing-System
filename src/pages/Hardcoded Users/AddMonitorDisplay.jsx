@@ -1,18 +1,17 @@
 import React, { useState } from "react";
-import userImg from "../../../images/user.png";
+import user from "../../images/user.png";
 import { FaTimes } from "react-icons/fa";
-import { getCurrentUser } from "../../../utils/auth";
 
-const AddUser = ({ onClose, onSuccess }) => {
-  const [selectedImage, setSelectedImage] = useState(userImg);
+const AddMonitorDisplay = () => {
+  const [selectedImage, setSelectedImage] = useState(user);
+
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-
-  const user = getCurrentUser();
+  const [department, setDepartment] = useState("");
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -30,6 +29,7 @@ const AddUser = ({ onClose, onSuccess }) => {
     setMiddleName("");
     setLastName("");
     setEmail("");
+    setDepartment("");
     setPassword("");
     setConfirmPassword("");
   };
@@ -61,8 +61,8 @@ const AddUser = ({ onClose, onSuccess }) => {
           lastName,
           email,
           password,
-          role: "staff", // hardcoded
-          department: user.department,
+          role: "display", // hardcoded
+          department,
           profileImage: selectedImage,
         }),
       });
@@ -80,8 +80,6 @@ const AddUser = ({ onClose, onSuccess }) => {
       if (response.ok) {
         alert("User registered successfully!");
         handleClear();
-        onClose();
-        onSuccess();
       } else {
         alert(data.message || "Registration failed.");
       }
@@ -222,13 +220,9 @@ const AddUser = ({ onClose, onSuccess }) => {
       ></div>
       <div style={modalStyle}>
         <h3 className="text-2xl pl-2 font-semibold flex self-start mb-4">
-          Add New Staff
+          Add New Staff for Monitor Display
         </h3>
-        <span
-          className="text-[#35408E]"
-          style={closeButtonStyle}
-          onClick={onClose}
-        >
+        <span className="text-[#35408E]" style={closeButtonStyle}>
           <FaTimes />
         </span>
         <form onSubmit={handleSubmit}>
@@ -244,6 +238,24 @@ const AddUser = ({ onClose, onSuccess }) => {
               style={{ display: "none" }}
               onChange={handleImageUpload}
             />
+          </div>
+
+          <div className="w-3/4 mb-4 mx-auto">
+            <label style={labelStyle}>Department</label>
+            <select
+              required
+              style={inputStyle}
+              className="text-sm md:text-base"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+            >
+              <option value="" disabled>
+                Select department
+              </option>
+              <option value="admissions">Admissions</option>
+              <option value="registrar">Registrar</option>
+              <option value="accounting">Accounting</option>
+            </select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[15px]">
@@ -344,4 +356,4 @@ const AddUser = ({ onClose, onSuccess }) => {
   );
 };
 
-export default AddUser;
+export default AddMonitorDisplay;

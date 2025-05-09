@@ -64,7 +64,7 @@ const TransactionInfo = ({
                 htmlFor={`toggle-${transaction._id}`}
                 className="toggle-label"
               >
-                <span className="label-on">ON</span>
+                <span className="label-on !text-[#ffd41c]">ON</span>
                 <span className="label-off">OFF</span>
               </label>
             </div>

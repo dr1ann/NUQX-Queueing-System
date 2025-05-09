@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import "../Style.css";
+import LogoutModal from "./LogoutModal";
 import {
   FaPencilAlt,
   FaFileInvoiceDollar,
@@ -17,10 +18,20 @@ function StartPage() {
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  const handleConfirmLogout = () => {
+    setShowLogoutConfirm(false);
+    navigate("/login");
+  };
+
+  const handleCancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
 
   useEffect(() => {
-    if (!userDetails?.userType) {
-      navigate("/kiosk");
+    if (!userDetails?.userType || !state?.department) {
+      navigate("/kiosk/department");
       return;
     }
     fetchTransactions();
@@ -32,9 +43,12 @@ function StartPage() {
       const response = await fetch(
         "http://localhost:5000/api/auth/transactions",
         {
+          method: "POST",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
+          body: JSON.stringify({ selectedDepartment: state?.department }),
         }
       );
       if (response.ok) {
@@ -45,6 +59,7 @@ function StartPage() {
         alert("An error occurred. Please refresh the page.");
       }
     } catch (error) {
+      console.error(error);
       alert("An error occurred. Please refresh the page.");
     }
   };
@@ -55,7 +70,7 @@ function StartPage() {
   };
 
   const handleBack = () => {
-    navigate("/mainpage");
+    navigate("/kiosk/department");
   };
 
   const handleModalClose = () => {
@@ -79,6 +94,7 @@ function StartPage() {
       height: "80px",
       display: "flex",
       alignItems: "center",
+      justifyContent: "space-between",
       padding: "0 20px",
     },
     logoContainer: {
@@ -136,6 +152,19 @@ function StartPage() {
               </h1>
             </div>
           </div>
+          {showLogoutConfirm && (
+            <LogoutModal
+              show={showLogoutConfirm}
+              onClose={handleCancelLogout}
+              onConfirm={handleConfirmLogout}
+            />
+          )}
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            className="w-fit rounded-lg px-3 py-1 z-9999 text-lg"
+          >
+            Logout
+          </button>
         </header>
         <div style={styles.yellowLine}></div>
 
@@ -188,6 +217,7 @@ function StartPage() {
                           isIDReset={selectedTransaction.isIDReset}
                           transactionID={selectedTransaction.transactionID}
                           userType={userDetails.userType}
+                          department={state?.department}
                           details={{
                             ...userDetails,
                             concern: selectedTransaction.name,

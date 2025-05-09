@@ -25,22 +25,6 @@ function StaffApp() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const checkUserWindow = () => {
-    const token = localStorage.getItem("token");
-    if (!token) return false;
-    const user = JSON.parse(atob(token.split(".")[1]));
-    console.log(user);
-    return user?.windowNumber;
-  };
-
-  useEffect(() => {
-    if (!checkUserWindow()) {
-      setShowDialog(true);
-    } else {
-      setShowDialog(false);
-    }
-  }, []);
-
   const fetchAssignedWindows = async () => {
     try {
       setLoading(true);
@@ -70,21 +54,51 @@ function StaffApp() {
   };
 
   useEffect(() => {
-    fetchAssignedWindows();
-    const intervalId = setInterval(fetchAssignedWindows, 5000);
-    return () => clearInterval(intervalId);
-  }, []);
+    if (showDialog) {
+      fetchAssignedWindows();
+      const intervalId = setInterval(fetchAssignedWindows, 5000);
+      return () => clearInterval(intervalId);
+    }
+  }, [showDialog]);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
+    const checkUserWindowFromDB = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setShowDialog(true);
+          return;
+        }
 
-    try {
-      const user = JSON.parse(atob(token.split(".")[1]));
-      setWindowNumber(user?.windowNumber || "");
-    } catch (e) {
-      console.error("Invalid token", e);
-    }
+        const response = await fetch(
+          "http://localhost:5000/api/auth/my-window",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch window assignment.");
+        }
+
+        const data = await response.json();
+        const windowNum = data.windowNumber;
+
+        if (windowNum) {
+          setWindowNumber(windowNum); // Set the window number from backend
+          setShowDialog(false);
+        } else {
+          setShowDialog(true); // User has no assignment
+        }
+      } catch (error) {
+        console.error("Error checking window assignment from backend:", error);
+        setShowDialog(true);
+      }
+    };
+
+    checkUserWindowFromDB();
   }, []);
 
   const handleConfirm = async () => {
@@ -148,8 +162,10 @@ function StaffApp() {
 
   const isWindowAssigned = (windowNum) => {
     if (!windowNum) return false;
-    const userWindow = checkUserWindow();
-    if (parseInt(windowNum) === parseInt(userWindow)) return false; // allow own window
+
+    // allow own assigned window
+    if (parseInt(windowNum) === parseInt(windowNumber)) return false;
+
     return assignedWindows.includes(parseInt(windowNum));
   };
 
@@ -225,7 +241,9 @@ function StaffApp() {
                 }}
                 disabled={loading}
               >
-                <option value="">Select a window number</option>
+                <option value="" disabled>
+                  Select a window number
+                </option>
                 {availableWindows.map((num) => {
                   const assigned = isWindowAssigned(num);
                   return (
