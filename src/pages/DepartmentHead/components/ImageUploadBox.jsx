@@ -8,23 +8,20 @@ const ImageUploadBox = ({ onImageSelect, defaultImage }) => {
     if (defaultImage && !previewImage) {
       setPreviewImage(defaultImage);
     }
-  }, [defaultImage, previewImage]);
+  }, [defaultImage]);
 
   const handleImageClick = () => {
-    fileInputRef.current.click(); // open file dialog
+    fileInputRef.current.click();
   };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-        onImageSelect(reader.result); // pass base64 to parent
-      };
-      reader.readAsDataURL(file);
+      const imageUrl = URL.createObjectURL(file);
+      setPreviewImage(imageUrl);
+      onImageSelect(file); // Send actual File object to parent
     } else {
-      alert("Please select a valid image file.");
+      alert("Please upload a valid image.");
     }
   };
 
@@ -44,7 +41,6 @@ const ImageUploadBox = ({ onImageSelect, defaultImage }) => {
         <input
           type="file"
           accept="image/*"
-          name="selectedImage"
           ref={fileInputRef}
           onChange={handleImageChange}
           className="hidden"

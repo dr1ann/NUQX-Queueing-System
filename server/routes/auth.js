@@ -6,20 +6,24 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticateToken = require("../../src/middleware/middlewareAuth");
 const JWT_SECRET = process.env.JWT_SECRET;
-const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
+const multer = require("multer");
 
-// Create uploads directory if it doesn't exist
-const uploadDir = path.join(__dirname, "..", "uploads", "users");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
+// Function to create upload directory if it doesn't exist
+const createUploadDir = (dirPath) => {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+};
 
-// Set up multer storage
-const storage = multer.diskStorage({
+// Users upload setup
+const usersUploadDir = path.join(__dirname, "..", "uploads", "users");
+createUploadDir(usersUploadDir);
+
+const usersStorage = multer.diskStorage({
   destination: (req, file, cb) => {
-    cb(null, uploadDir);
+    cb(null, usersUploadDir);
   },
   filename: (req, file, cb) => {
     const uniqueName = Date.now() + "-" + file.originalname;
@@ -27,7 +31,27 @@ const storage = multer.diskStorage({
   },
 });
 
-const upload = multer({ storage });
+// Transactions upload setup
+const transactionsUploadDir = path.join(
+  __dirname,
+  "..",
+  "uploads",
+  "transactions"
+);
+createUploadDir(transactionsUploadDir);
+
+const transactionsStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, transactionsUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+
+const uploadUsers = multer({ storage: usersStorage });
+const uploadTransactions = multer({ storage: transactionsStorage });
 
 // Login Route
 router.post("/login", async (req, res) => {
@@ -79,70 +103,81 @@ router.post("/login", async (req, res) => {
 });
 
 // Register Route
-router.post("/register", upload.single("profileImage"), async (req, res) => {
-  const { firstName, middleName, lastName, email, password, role, department } =
-    req.body;
-
-  const profileImagePath = req.file
-    ? `/uploads/users/${req.file.filename}`
-    : null;
-  const db = getDb();
-
-  try {
-    // Check if user already exists
-    const existingUser = await db.collection("users").findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Prepare the new user object
-    const newUser = {
+router.post(
+  "/register",
+  uploadUsers.single("profileImage"),
+  async (req, res) => {
+    const {
       firstName,
       middleName,
       lastName,
       email,
-      password: hashedPassword,
+      password,
       role,
-      profileImage: profileImagePath,
-    };
+      department,
+    } = req.body;
 
-    if (role === "staff" || role === "departmentHead" || role === "display") {
-      newUser.department = department;
+    const profileImagePath = req.file
+      ? `/uploads/users/${req.file.filename}`
+      : null;
+    const db = getDb();
+
+    try {
+      // Check if user already exists
+      const existingUser = await db.collection("users").findOne({ email });
+      if (existingUser) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Prepare the new user object
+      const newUser = {
+        firstName,
+        middleName,
+        lastName,
+        email,
+        password: hashedPassword,
+        role,
+        profileImage: profileImagePath,
+      };
+
+      if (role === "staff" || role === "departmentHead" || role === "display") {
+        newUser.department = department;
+      }
+
+      // Insert user
+      const result = await db.collection("users").insertOne(newUser);
+
+      // Prepare JWT payload
+      const payload = {
+        userId: result.insertedId,
+        firstName,
+        middleName,
+        lastName,
+        email,
+        role,
+        profileImage: profileImagePath,
+      };
+
+      if (role === "staff" || role === "departmentHead" || role === "display") {
+        payload.department = department;
+      }
+
+      const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+
+      res.status(201).json({
+        message: "Registered successfully",
+        token,
+        role,
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Server error" });
     }
-
-    // Insert user
-    const result = await db.collection("users").insertOne(newUser);
-
-    // Prepare JWT payload
-    const payload = {
-      userId: result.insertedId,
-      firstName,
-      middleName,
-      lastName,
-      email,
-      role,
-      profileImage: profileImagePath,
-    };
-
-    if (role === "staff" || role === "departmentHead" || role === "display") {
-      payload.department = department;
-    }
-
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
-
-    res.status(201).json({
-      message: "Registered successfully",
-      token,
-      role,
-    });
-  } catch (error) {
-    console.error("Registration error:", error);
-    res.status(500).json({ message: "Server error" });
   }
-});
+);
 
 // Get all staff
 router.get("/staff", authenticateToken, async (req, res) => {
@@ -162,96 +197,113 @@ router.get("/staff", authenticateToken, async (req, res) => {
 });
 
 // Add New Transaction
-router.post("/add-transaction", authenticateToken, async (req, res) => {
-  const { transactionID, image, name } = req.body;
-  const { department } = req.user;
-  const db = getDb();
+router.post(
+  "/add-transaction",
+  authenticateToken,
+  uploadTransactions.single("image"),
+  async (req, res) => {
+    const { transactionID, name } = req.body;
+    const { department } = req.user;
+    const imagePath = req.file
+      ? `/uploads/transactions/${req.file.filename}`
+      : null;
+    const db = getDb();
 
-  try {
-    const existingTransaction = await db.collection("transactions").findOne({
-      name: { $regex: `^${name}$`, $options: "i" },
-      department: department,
-    });
-    if (existingTransaction) {
-      return res
-        .status(400)
-        .json({ message: "Transaction name already exists" });
-    }
-
-    const newTransaction = {
-      transactionID,
-      image,
-      name,
-      isOn: true,
-      isIDReset: false,
-      department,
-      createdAt: new Date(),
-    };
-
-    await db.collection("transactions").insertOne(newTransaction);
-    res.status(201).json({ message: "Transaction added successfully" });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// Edit Transaction
-router.put("/edit-transaction/:id", authenticateToken, async (req, res) => {
-  const { id } = req.params;
-  const { transactionID, image, name } = req.body;
-  const db = getDb();
-
-  try {
-    const existingTransaction = await db.collection("transactions").findOne({
-      _id: new ObjectId(id),
-    });
-
-    if (!existingTransaction) {
-      return res.status(404).json({ message: "Transaction not found" });
-    }
-
-    const noChangesMade =
-      (transactionID === undefined ||
-        transactionID === existingTransaction.transactionID) &&
-      (image === undefined || image === existingTransaction.image) &&
-      (name === undefined || name === existingTransaction.name);
-
-    if (noChangesMade) {
-      return res
-        .status(400)
-        .json({ message: "No changes were made to the transaction" });
-    }
-
-    if (name && name !== existingTransaction.name) {
-      const duplicateName = await db.collection("transactions").findOne({
+    try {
+      const existingTransaction = await db.collection("transactions").findOne({
         name: { $regex: `^${name}$`, $options: "i" },
-        department: existingTransaction.department,
-        _id: { $ne: new ObjectId(id) },
+        department: department,
       });
-
-      if (duplicateName) {
+      if (existingTransaction) {
         return res
           .status(400)
           .json({ message: "Transaction name already exists" });
       }
+
+      const newTransaction = {
+        transactionID,
+        image: imagePath,
+        name,
+        isHidden: false,
+        isIDReset: false,
+        department,
+        createdAt: new Date(),
+      };
+
+      await db.collection("transactions").insertOne(newTransaction);
+      res.status(201).json({ message: "Transaction added successfully" });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ message: "Server error" });
     }
-
-    const updatedTransaction = {
-      ...(transactionID && { transactionID }),
-      ...(image && { image }),
-      ...(name && { name }),
-    };
-
-    await db
-      .collection("transactions")
-      .updateOne({ _id: new ObjectId(id) }, { $set: updatedTransaction });
-    res.status(200).json({ message: "Transaction updated successfully" });
-  } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: "Server error" });
   }
-});
+);
+
+// Edit Transaction
+router.put(
+  "/edit-transaction/:id",
+  authenticateToken,
+  uploadTransactions.single("image"),
+  async (req, res) => {
+    const { id } = req.params;
+    const { transactionID, name } = req.body;
+    const imagePath = req.file
+      ? `/uploads/transactions/${req.file.filename}`
+      : null;
+    const db = getDb();
+
+    try {
+      const existingTransaction = await db.collection("transactions").findOne({
+        _id: new ObjectId(id),
+      });
+
+      if (!existingTransaction) {
+        return res.status(404).json({ message: "Transaction not found" });
+      }
+
+      const noChangesMade =
+        (transactionID === undefined ||
+          transactionID === existingTransaction.transactionID) &&
+        (imagePath === undefined || imagePath === existingTransaction.image) &&
+        (name === undefined || name === existingTransaction.name);
+
+      if (noChangesMade) {
+        return res
+          .status(400)
+          .json({ message: "No changes were made to the transaction" });
+      }
+
+      // Check for duplicate transaction names
+      if (name && name !== existingTransaction.name) {
+        const duplicateName = await db.collection("transactions").findOne({
+          name: { $regex: `^${name}$`, $options: "i" },
+          department: existingTransaction.department,
+          _id: { $ne: new ObjectId(id) },
+        });
+
+        if (duplicateName) {
+          return res
+            .status(400)
+            .json({ message: "Transaction name already exists" });
+        }
+      }
+
+      const updatedTransaction = {
+        ...(transactionID && { transactionID }),
+        ...(imagePath && { image: imagePath }),
+        ...(name && { name }),
+      };
+
+      await db
+        .collection("transactions")
+        .updateOne({ _id: new ObjectId(id) }, { $set: updatedTransaction });
+      res.status(200).json({ message: "Transaction updated successfully" });
+    } catch (error) {
+      console.error("Error:", error);
+      res.status(500).json({ message: "Server error" });
+    }
+  }
+);
 
 // Reset isIDReset to true for all transactions
 router.put("/reset-id-flags", authenticateToken, async (req, res) => {
@@ -298,13 +350,13 @@ router.post("/transactions", authenticateToken, async (req, res) => {
 // Toggling the transaction
 router.put("/transactions/:id/toggle", authenticateToken, async (req, res) => {
   const { id } = req.params;
-  const { isOn } = req.body;
+  const { isHidden } = req.body;
 
   try {
     const db = getDb();
     await db
       .collection("transactions")
-      .updateOne({ _id: new ObjectId(id) }, { $set: { isOn } });
+      .updateOne({ _id: new ObjectId(id) }, { $set: { isHidden } });
 
     res.status(200).json({ message: "Toggle updated successfully" });
   } catch (error) {

@@ -21,13 +21,13 @@ const TransactionInfo = ({
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ isOn: newState }),
+          body: JSON.stringify({ isHidden: newState }),
         }
       );
 
       if (response.ok) {
         setTransactions((prev) =>
-          prev.map((tx) => (tx._id === id ? { ...tx, isOn: newState } : tx))
+          prev.map((tx) => (tx._id === id ? { ...tx, isHidden: newState } : tx))
         );
       } else {
         alert("Failed to update toggle state.");
@@ -47,7 +47,7 @@ const TransactionInfo = ({
             className="flex flex-col border-[1px] border-[#35408E] rounded-lg p-4"
           >
             <img
-              src={transaction.image}
+              src={`http://localhost:5000${transaction.image}`}
               className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px] mb-4"
               alt="Transaction icon"
             />
@@ -55,9 +55,9 @@ const TransactionInfo = ({
               <input
                 type="checkbox"
                 id={`toggle-${transaction._id}`}
-                checked={transaction.isOn}
+                checked={transaction.isHidden}
                 onChange={() =>
-                  handleToggle(transaction._id, !transaction.isOn)
+                  handleToggle(transaction._id, !transaction.isHidden)
                 }
               />
               <label

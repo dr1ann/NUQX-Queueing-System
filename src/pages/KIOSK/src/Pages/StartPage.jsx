@@ -183,7 +183,7 @@ function StartPage() {
         ) : (
           <>
             {transactions.length === 0 ||
-            transactions.every((tx) => tx.isOn === false) ? (
+            transactions.every((tx) => tx.isHidden === true) ? (
               <div className="h-[50vh] flex items-center justify-center">
                 <span className="text-center uppercase text-xl md:text-2xl text-gray-600 font-semibold py-10">
                   No transactions listed yet.
@@ -192,7 +192,7 @@ function StartPage() {
             ) : (
               <div className="flex flex-wrap items-center justify-center mt-6 gap-4 px-4">
                 {transactions
-                  .filter((transaction) => transaction.isOn)
+                  .filter((transaction) => !transaction.isHidden)
                   .map((transaction) => (
                     <>
                       <div key={transaction._id}>
@@ -201,7 +201,7 @@ function StartPage() {
                           onClick={() => handleOpenModal(transaction)}
                         >
                           <img
-                            src={transaction.image}
+                            src={`http://localhost:5000${transaction.image}`}
                             className="h-[80px] sm:h-[120px] w-[80px] sm:w-[120px]"
                             alt="Transaction icon"
                           />

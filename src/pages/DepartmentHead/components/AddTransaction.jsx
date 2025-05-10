@@ -24,37 +24,36 @@ const AddTransaction = ({ onClose, onSuccess }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedImage || !selectedImage.startsWith("data:image/")) {
+  
+    if (!selectedImage) {
       alert("Please upload a valid image file.");
       return;
     }
-
+  
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        "http://localhost:5000/api/auth/add-transaction",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            transactionID: generateId(transactionName),
-            image: selectedImage,
-            name: transactionName,
-          }),
-        }
-      );
+      const formData = new FormData();
+      
+      // Append form data
+      formData.append("transactionID", generateId(transactionName)); // Assuming generateId is a function that creates an ID
+      formData.append("name", transactionName);
+      formData.append("image", selectedImage); // Append the file directly (not base64)
+  
+      const response = await fetch("http://localhost:5000/api/auth/add-transaction", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData, // Send FormData here
+      });
+  
       if (response.status === 413) {
-        alert(
-          "Upload failed: Image size is too large. Please use a smaller file."
-        );
+        alert("Upload failed: Image size is too large. Please use a smaller file.");
         return;
       }
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
         alert("Transaction added successfully!");
         handleClearFields();
