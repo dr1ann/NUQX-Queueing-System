@@ -38,7 +38,7 @@ function NavAvatar() {
         {/* Avatar */}
         <img
           className="w-10 md:w-14 h-auto rounded-full border-[2px] border-white object-cover mb-[-15px] mr-[10px]"
-          src={profileImg}
+          src={`http://localhost:5000${user.profileImage}`}
           alt="Profile"
         />
       </div>

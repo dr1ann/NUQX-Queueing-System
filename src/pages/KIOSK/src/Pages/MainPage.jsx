@@ -5,6 +5,9 @@ import BackgroundImage from "../../../../images/NU-Manila.svg";
 import LogoutModal from "./LogoutModal";
 import { useState } from "react";
 import { RiLogoutCircleLine } from "react-icons/ri";
+import homepage from "../../../../images/newlogo.webp";
+import { RiQuestionLine } from "react-icons/ri";
+import { Link } from "react-router-dom";
 
 function MainPage() {
   const navigate = useNavigate();
@@ -30,20 +33,6 @@ function MainPage() {
       position: "fixed",
       width: "100%",
       height: "100vh",
-      backgroundColor: "#fff",
-    },
-    background: {
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      backgroundImage: `url(${BackgroundImage})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-      backgroundRepeat: "no-repeat",
-      opacity: 0.6,
-      zIndex: -1,
     },
     header: {
       backgroundColor: "#35408E",
@@ -73,111 +62,166 @@ function MainPage() {
       height: "8px",
       width: "100%",
     },
+    yellowLine1: {
+      backgroundColor: "#FFD41C",
+      height: "8px",
+      width: "100%",
+      position: "relative",
+      marginTop: "-54px",
+    },
     footer: {
       position: "relative",
       width: "100%",
       backgroundColor: "#35408E",
       height: "75px",
     },
+    p1: {
+      fontSize: "200px",
+      color: "#2d3b8c",
+      marginTop: "-120px",
+      maxWidth: "700px",
+      lineHeight: 1.4,
+      position: "relative",
+      marginLeft: "250px",
+      top: "350px",
+      fontWeight: "bold",
+    },
+    p: {
+      fontSize: "40px",
+      color: "#2d3b8c",
+      marginTop: "-120px",
+      maxWidth: "700px",
+      lineHeight: 1.4,
+      position: "relative",
+      marginLeft: "250px",
+      top: "470px",
+    },
+    homepageBtn: {
+      backgroundColor: "#2d3b8c",
+      color: "white",
+      border: "none",
+      padding: ".5rem 1rem",
+      borderRadius: "10px",
+      cursor: "pointer",
+      transition: "background-color 0.3s ease-in-out",
+      width: "100px",
+    },
+    content: {
+      position: "relative",
+      top: "-70px",
+    },
   };
 
   return (
-    <div>
-      <main className="flex flex-col flex-1 min-h-screen">
-        <div style={styles.background}></div>
-        <header style={styles.header}>
-          <div style={styles.logoContainer}>
-            <div
-              className="ml-[5px] md:ml-0"
-              style={{ display: "flex", alignItems: "center" }}
-            >
-              <img
-                className="max-h-[100px] w-20 md:w-full mr-[6px]"
-                src={Logo}
-                alt="NU Logo"
+    <div className="xl:fixed w-full min-h-screen h-screen xl:overflow-hidden">
+      <main className="flex flex-col justify-between h-full">
+        <div>
+          <header style={styles.header}>
+            <div style={styles.logoContainer}>
+              <div
+                className="ml-[5px] md:ml-0"
+                style={{ display: "flex", alignItems: "center" }}
+              >
+                <img
+                  className="max-h-[100px] w-20 md:w-full mr-[6px]"
+                  src={Logo}
+                  alt="NU Logo"
+                />
+                <h1 className="text-white text-[1.5rem] mt-2 md:text-[2rem] font-[200]">
+                  NUQX
+                </h1>
+              </div>
+            </div>
+            {showLogoutConfirm && (
+              <LogoutModal
+                show={showLogoutConfirm}
+                onClose={handleCancelLogout}
+                onConfirm={handleConfirmLogout}
               />
-              <h1 className="text-white text-[1.5rem] mt-2 md:text-[2rem] font-[200]">
-                NUQX
-              </h1>
+            )}
+            <button
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-fit rounded-lg px-3 py-1 z-9999 text-lg"
+            >
+              Logout
+            </button>
+          </header>
+          <div style={styles.yellowLine}></div>
+        </div>
+        <div className="flex flex-col lg:flex-row px-4 items-center gap-4 md:gap-10 w-full max-w-[130rem] mx-auto">
+          <div>
+            <h1 className="text-2xl font-bold uppercase md:text-4xl text-center md:text-left text-black">
+              Welcome to NUQX
+            </h1>
+            <img
+              src={homepage}
+              alt="Home Page"
+              className="w-[90%] mx-auto sm:w-1/2 lg:w-[30rem] xl:w-[40rem] 2xl:w-[45rem] rounded-2xl border-[2px] border-[#35408E]"
+            />
+          </div>
+
+          <div className="flex flex-col items-start pt-0 lg:pt-10">
+            <div className="grid grid-cols-2 w-full gap-4 text-white">
+              <div
+                onClick={() => handleStart("New Student")}
+                className="flex flex-col cursor-pointer p-4 bg-[#35408E] rounded-2xl"
+              >
+                <h1 className="text-lg lg:text-3xl font-semibold">
+                  New Student
+                </h1>
+                <span className="text-sm lg:text-xl">
+                  For freshmen or transferees enrolling at NU for the first
+                  time.
+                </span>
+              </div>
+              <div
+                onClick={() => handleStart("Continuing Student")}
+                className="flex flex-col cursor-pointer p-4 bg-[#35408E] rounded-2xl"
+              >
+                <h1 className="text-lg lg:text-3xl font-semibold">
+                  Continuing
+                </h1>
+                <span className="text-sm lg:text-xl">
+                  For returning students currently enrolled at NU.
+                </span>
+              </div>
+            </div>
+            <div
+              onClick={() => handleStart("Senior or PWD")}
+              className="flex flex-col cursor-pointer my-4 w-full justify-center text-white p-4 bg-[#35408E] rounded-2xl"
+            >
+              <h1 className="text-lg lg:text-3xl font-semibold">Priority</h1>
+              <span className="text-sm lg:text-xl">
+                For Senior citezens (60+) or persons with disabilities who need
+                accessible, prioritized services.
+              </span>
+            </div>
+            <div className="flex gap-3">
+              <Link
+                to="/kiosk"
+                className="flex items-center text-[#35408E] hover:underline text-lg space-x-1"
+              >
+                <RiQuestionLine className="w-5 h-5" />
+                <span>How to use the system</span>
+              </Link>
             </div>
           </div>
-          {showLogoutConfirm && (
-            <LogoutModal
-              show={showLogoutConfirm}
-              onClose={handleCancelLogout}
-              onConfirm={handleConfirmLogout}
-            />
-          )}
-          <button
-            onClick={() => setShowLogoutConfirm(true)}
-            className="w-fit rounded-lg px-3 py-1 z-9999 text-lg"
-          >
-            Logout
-          </button>
-        </header>
-        <div style={styles.yellowLine}></div>
-
-        <div className="flex flex-col items-center justify-center m-auto">
-          <div style={{ textAlign: "center", marginTop: "50px" }}>
-            <h2 className="text-lg sm:text-[2rem] mb-6 font-bold uppercase bg-white/70 px-4 py-2 rounded-lg">
-              Select your user type:
-            </h2>
-          </div>
-
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "140px",
-            }}
-          >
-            <button
-              className="w-[13rem] sm:w-[30rem] sm:h-[5rem] h-[3.5rem] text-base sm:text-2xl"
-              onClick={() => handleStart("Student or Guest")}
-              style={{
-                padding: "10px",
-                borderRadius: "25px",
-                backgroundColor: "#35408E",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              Student or Guest
-            </button>
-
-            <button
-              className="w-[13rem] sm:w-[30rem] sm:h-[5rem] h-[3.5rem] text-base sm:text-2xl"
-              onClick={() => handleStart("Senior or PWD")}
-              style={{
-                padding: "10px",
-                borderRadius: "25px",
-                backgroundColor: "#35408E",
-                color: "#fff",
-                border: "none",
-                cursor: "pointer",
-                marginTop: "-100px",
-              }}
-            >
-              Senior or PWD
-            </button>
-          </div>
         </div>
+        <footer style={styles.footer}>
+          <div
+            className="yellow-line3"
+            style={{
+              backgroundColor: "#FFD41C",
+              height: "8px",
+              width: "100%",
+              position: "absolute",
+              bottom: 70,
+              left: 0,
+              zIndex: 99,
+            }}
+          ></div>
+        </footer>
       </main>
-      <footer style={styles.footer}>
-        <div
-          style={{
-            backgroundColor: "#FFD41C",
-            height: "8px",
-            width: "100%",
-            position: "absolute",
-            bottom: 70,
-            left: 0,
-            zIndex: 99,
-          }}
-        ></div>
-      </footer>
     </div>
   );
 }

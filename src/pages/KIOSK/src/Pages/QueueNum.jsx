@@ -9,6 +9,7 @@ function QueueNum() {
   const location = useLocation();
 
   const queueNumber = location.state?.queueNumber;
+  console.log(location?.state?.queueNumber);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleDoneClick = () => {

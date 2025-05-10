@@ -87,7 +87,7 @@ const StaffInfo = ({ staff }) => {
           <div className="flex flex-wrap gap-1">
             <div style={styles.avatarContainer}>
               <img
-                src={user.profileImage ? user.profileImage : selectedImage}
+                src={`http://localhost:5000${user.profileImage}`}
                 alt="Profile"
                 style={styles.avatarImage}
               />

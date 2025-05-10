@@ -4,6 +4,7 @@ import { FaTimes } from "react-icons/fa";
 
 const AddMonitorDisplay = () => {
   const [selectedImage, setSelectedImage] = useState(user);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
@@ -15,12 +16,11 @@ const AddMonitorDisplay = () => {
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setSelectedImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (file && file.type.startsWith("image/")) {
+      setSelectedFile(file);
+      setSelectedImage(URL.createObjectURL(file));
+    } else {
+      alert("Please upload a valid image.");
     }
   };
 
@@ -32,47 +32,37 @@ const AddMonitorDisplay = () => {
     setDepartment("");
     setPassword("");
     setConfirmPassword("");
+    setSelectedImage(user);
+    setSelectedFile(null);
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Password mismatch check
     if (password !== confirmPassword) {
       alert("Passwords do not match.");
       return;
     }
 
-    // Image file validation
-    if (!selectedImage || !selectedImage.startsWith("data:image/")) {
+    if (!selectedFile) {
       alert("Please upload a valid image file.");
       return;
     }
 
     try {
+      const formData = new FormData();
+      formData.append("firstName", firstName);
+      formData.append("middleName", middleName);
+      formData.append("lastName", lastName);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("role", "display");
+      formData.append("department", department);
+      formData.append("profileImage", selectedFile);
+
       const response = await fetch("http://localhost:5000/api/auth/register", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          firstName,
-          middleName,
-          lastName,
-          email,
-          password,
-          role: "display", // hardcoded
-          department,
-          profileImage: selectedImage,
-        }),
+        body: formData,
       });
-
-      if (response.status === 413) {
-        alert(
-          "Upload failed: Image size is too large. Please upload a smaller image."
-        );
-        return;
-      }
 
       const data = await response.json();
       console.log(data);

@@ -6,6 +6,28 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const authenticateToken = require("../../src/middleware/middlewareAuth");
 const JWT_SECRET = process.env.JWT_SECRET;
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
+
+// Create uploads directory if it doesn't exist
+const uploadDir = path.join(__dirname, "..", "uploads", "users");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Set up multer storage
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
 
 // Login Route
 router.post("/login", async (req, res) => {
@@ -43,6 +65,7 @@ router.post("/login", async (req, res) => {
     }
 
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: "1h" });
+    console.log("Token length:", token.length);
 
     res.status(200).json({
       message: "Login successful",
@@ -56,17 +79,13 @@ router.post("/login", async (req, res) => {
 });
 
 // Register Route
-router.post("/register", async (req, res) => {
-  const {
-    firstName,
-    middleName,
-    lastName,
-    email,
-    password,
-    role,
-    department,
-    profileImage,
-  } = req.body;
+router.post("/register", upload.single("profileImage"), async (req, res) => {
+  const { firstName, middleName, lastName, email, password, role, department } =
+    req.body;
+
+  const profileImagePath = req.file
+    ? `/uploads/users/${req.file.filename}`
+    : null;
   const db = getDb();
 
   try {
@@ -87,18 +106,17 @@ router.post("/register", async (req, res) => {
       email,
       password: hashedPassword,
       role,
-      profileImage,
+      profileImage: profileImagePath,
     };
 
-    // Conditionally add department to newUser if the role is 'staff' or 'departmentHead'
     if (role === "staff" || role === "departmentHead" || role === "display") {
       newUser.department = department;
     }
 
-    // Insert new user into the database
+    // Insert user
     const result = await db.collection("users").insertOne(newUser);
 
-    // Prepare the payload for JWT
+    // Prepare JWT payload
     const payload = {
       userId: result.insertedId,
       firstName,
@@ -106,7 +124,7 @@ router.post("/register", async (req, res) => {
       lastName,
       email,
       role,
-      profileImage,
+      profileImage: profileImagePath,
     };
 
     if (role === "staff" || role === "departmentHead" || role === "display") {
@@ -318,7 +336,7 @@ router.post("/generate-queue-number", authenticateToken, async (req, res) => {
     } else if (latestQueue.length > 0) {
       const lastQueue = latestQueue[0];
       const match = lastQueue.generatedQueuenumber.match(
-        /(\d{3})(?=\s*(-PL)?$)/
+        /(\d{3})(?=\s*(-PL|-NW)?$)/
       );
 
       if (match) {
@@ -331,10 +349,18 @@ router.post("/generate-queue-number", authenticateToken, async (req, res) => {
     } else {
       newNumber = "001";
     }
+    const normalizedUserType = userType.trim();
 
-    const isPriority = userType === "Senior or PWD";
-    const isPriorityString = isPriority ? " -PL" : "";
-    const generatedQueuenumber = transactionID + newNumber + isPriorityString;
+    let suffix = "";
+    if (normalizedUserType === "Senior or PWD") {
+      suffix = " -PL";
+    } else if (normalizedUserType === "New Student") {
+      suffix = " -NW";
+    }
+
+    const isPriority =
+      userType === "Senior or PWD" || userType === "New Student";
+    const generatedQueuenumber = transactionID + newNumber + suffix;
 
     const newQueue = {
       transactionID,
@@ -402,16 +428,16 @@ router.put("/queue-numbers/:id/update", authenticateToken, async (req, res) => {
       });
     }
 
-    await db.collection("queue-numbers").updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          status,
-          updatedAt: new Date(),
-          ...(windowNumber !== undefined && { windowNumber }),
-        },
-      }
-    );
+    const updateFields = {
+      status,
+      ...(status !== "Completed" && { updatedAt: new Date() }),
+      ...(status === "Completed" && { dateEnded: new Date() }),
+      ...(windowNumber !== undefined && { windowNumber }),
+    };
+
+    await db
+      .collection("queue-numbers")
+      .updateOne({ _id: new ObjectId(id) }, { $set: updateFields });
 
     res.status(200).json({ message: "Queue number updated successfully" });
   } catch (error) {
